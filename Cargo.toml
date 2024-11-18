@@ -1,5 +1,5 @@
 [package]
-name = "get-signed-url"
+name = "gcloud-sdk-signed-url"
 version = "0.1.0"
 edition = "2021"
 
