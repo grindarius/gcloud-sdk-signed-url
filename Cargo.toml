@@ -1,0 +1,9 @@
+[package]
+name = "get-signed-url"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gcloud-sdk = { version = "0.25.8", features = ["google-rest-storage-v1"] }
+http = "1.1.0"
+url = "2.5.3"
