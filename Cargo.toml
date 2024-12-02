@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+base64 = "0.22.1"
+chrono = "0.4.38"
 gcloud-sdk = { version = "0.25.8", features = ["google-rest-storage-v1"] }
 http = "1.1.0"
+regex = "1.11.1"
+tokio = { version = "1.41.1", features = ["rt", "rt-multi-thread", "macros"] }
 url = "2.5.3"

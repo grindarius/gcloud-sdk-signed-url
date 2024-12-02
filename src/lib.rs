@@ -1,12 +1,28 @@
-use gcloud_sdk::google_rest_apis::storage_v1::Object;
-use options::GetSignedUrlOptions;
+use std::fmt::Display;
 
-pub mod options;
+use sign::options::SignedURLOptions;
 
-pub trait SignedUrlExt {
-    fn get_signed_url(&self, _options: GetSignedUrlOptions) -> String;
+mod sign;
+
+pub async fn get_signed_url(
+    bucket: String,
+    object: String,
+    options: SignedURLOptions,
+) -> Result<(), SignedURLError> {
+    todo!()
 }
 
-impl SignedUrlExt for Object {
-    fn get_signed_url(&self, options: GetSignedUrlOptions) -> String {}
+#[derive(Debug, Clone)]
+pub enum SignedURLError {
+    SometingWong,
 }
+
+impl Display for SignedURLError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SometingWong => write!(f, "Someting wong guys"),
+        }
+    }
+}
+
+impl std::error::Error for SignedURLError {}
