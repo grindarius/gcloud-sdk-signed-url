@@ -45,10 +45,10 @@ pub fn sanitize_headers(headers: Vec<(String, String)>) -> Vec<(String, String)>
 }
 
 pub async fn signed_url(
-    bucket: String,
-    object: String,
+    bucket: &str,
+    object: &str,
     options: SignedURLOptions,
-    client: GoogleApi<IamCredentialsClient<GoogleAuthMiddleware>>,
+    client: &GoogleApi<IamCredentialsClient<GoogleAuthMiddleware>>,
 ) -> Url {
     let sanitized_headers = sanitize_headers(options.headers());
     // Strict path style because v2 only support this style.

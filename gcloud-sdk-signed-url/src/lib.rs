@@ -9,8 +9,8 @@ use sign::options::SignedURLOptions;
 mod sign;
 
 pub async fn get_signed_url(
-    bucket: String,
-    object: String,
+    bucket: &str,
+    object: &str,
     options: SignedURLOptions,
     client: GoogleApi<IamCredentialsClient<GoogleAuthMiddleware>>,
 ) -> Result<(), SignedURLError> {
