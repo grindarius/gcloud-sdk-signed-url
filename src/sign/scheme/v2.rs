@@ -1,6 +1,11 @@
-use std::{collections::HashMap, time::SystemTime};
+use std::time::SystemTime;
 
+use base64::{prelude::BASE64_STANDARD, Engine};
 use chrono::{DateTime, Utc};
+use gcloud_sdk::{
+    google::iam::credentials::v1::{iam_credentials_client::IamCredentialsClient, SignBlobRequest},
+    GoogleApi, GoogleAuthMiddleware,
+};
 use url::Url;
 
 use crate::sign::{options::SignedURLOptions, url_style::URLStyle};
@@ -39,7 +44,12 @@ pub fn sanitize_headers(headers: Vec<(String, String)>) -> Vec<(String, String)>
     sanitized_headers
 }
 
-pub async fn signed_url(bucket: String, object: String, options: SignedURLOptions) -> String {
+pub async fn signed_url(
+    bucket: String,
+    object: String,
+    options: SignedURLOptions,
+    client: GoogleApi<IamCredentialsClient<GoogleAuthMiddleware>>,
+) -> Url {
     let sanitized_headers = sanitize_headers(options.headers());
     // Strict path style because v2 only support this style.
     let host = URLStyle::Path.host(options.hostname().as_deref(), &bucket);
@@ -47,22 +57,40 @@ pub async fn signed_url(bucket: String, object: String, options: SignedURLOption
     let expiration_unix: DateTime<Utc> =
         (options.start_time().unwrap_or(SystemTime::now()) + options.expires()).into();
 
-    let mut buffer: Vec<u8> = format!(
+    let mut buffer: String = format!(
         "{}\n{}\n{}\n{}\n",
         options.method(),
         options.content_md5().unwrap_or("".to_string()),
         options.content_type().unwrap_or("".to_string()),
         expiration_unix.timestamp()
-    )
-    .into_bytes();
+    );
 
     if !sanitized_headers.is_empty() {
         for (h, v) in sanitized_headers {
-            buffer.extend(&format!("{}:{}\n", h, v).into_bytes());
+            buffer.push_str(&format!("{}:{}\n", h, v));
         }
     }
 
     let mut signed_url = Url::parse(&format!("https://{}/{}/{}", host, bucket, object)).unwrap();
+    buffer.push_str(signed_url.as_str());
 
-    todo!()
+    let signed_bytes_response = client
+        .get()
+        .sign_blob(SignBlobRequest {
+            name: options.google_access_id(),
+            delegates: vec![],
+            payload: buffer.into_bytes(),
+        })
+        .await
+        .unwrap();
+
+    let encoded = BASE64_STANDARD.encode(&signed_bytes_response.get_ref().signed_blob);
+    signed_url
+        .query_pairs_mut()
+        .append_pair("GoogleAccessId", &options.google_access_id())
+        .append_pair("Expires", &expiration_unix.timestamp().to_string())
+        .append_pair("Signature", &encoded)
+        .finish();
+
+    signed_url
 }
