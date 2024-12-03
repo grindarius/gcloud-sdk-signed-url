@@ -8,7 +8,7 @@ use gcloud_sdk::{
 };
 use url::Url;
 
-use crate::sign::{options::SignedURLOptions, url_style::URLStyle};
+use crate::{options::SignedURLOptions, url_style::URLStyle, SignedURLError};
 
 const X_GOOG_ENCRYPTION_KEY_HEADER: &str = "x-goog-encryption-key";
 const X_GOOG_ENCRYPTION_KEY_SHA_256_HEADER: &str = "x-goog-encryption-key-sha-256";
@@ -49,10 +49,10 @@ pub async fn signed_url(
     object: &str,
     options: SignedURLOptions,
     client: &GoogleApi<IamCredentialsClient<GoogleAuthMiddleware>>,
-) -> Url {
+) -> Result<Url, SignedURLError> {
     let sanitized_headers = sanitize_headers(options.headers());
     // Strict path style because v2 only support this style.
-    let host = URLStyle::Path.host(options.hostname().as_deref(), &bucket);
+    let host = URLStyle::Path.host(options.hostname().as_deref(), bucket);
 
     let expiration_unix: DateTime<Utc> =
         (options.start_time().unwrap_or(SystemTime::now()) + options.expires()).into();
@@ -81,8 +81,7 @@ pub async fn signed_url(
             delegates: vec![],
             payload: buffer.into_bytes(),
         })
-        .await
-        .unwrap();
+        .await.map_err(|e| e.)
 
     let encoded = BASE64_STANDARD.encode(&signed_bytes_response.get_ref().signed_blob);
     signed_url

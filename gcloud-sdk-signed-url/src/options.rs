@@ -1,10 +1,11 @@
 use std::{
-    collections::HashMap,
-    fmt::{Debug, Display},
+    fmt::Debug,
     time::{Duration, SystemTime},
 };
 
-use base64::{prelude::BASE64_STANDARD, DecodeError, Engine};
+use base64::{prelude::BASE64_STANDARD, Engine};
+
+use crate::error::SignedURLOptionsBuilderError;
 
 use super::{method::SignedURLMethod, scheme::SignedURLScheme, url_style::URLStyle};
 
@@ -126,15 +127,12 @@ impl SignedURLOptionsBuilder {
         self
     }
 
-    pub fn headers(&mut self, headers: HashMap<String, String>) -> &mut Self {
+    pub fn headers(&mut self, headers: Vec<(String, String)>) -> &mut Self {
         self.headers = Some(headers);
         self
     }
 
-    pub fn query_parameters(
-        &mut self,
-        query_parameters: HashMap<String, Vec<String>>,
-    ) -> &mut Self {
+    pub fn query_parameters(&mut self, query_parameters: Vec<(String, String)>) -> &mut Self {
         self.query_parameters = Some(query_parameters);
         self
     }
@@ -164,7 +162,7 @@ impl SignedURLOptionsBuilder {
         self
     }
 
-    pub fn build(&mut self) -> Result<SignedURLOptions, SignedURLOptionsBuilderError> {
+    pub fn build(&self) -> Result<SignedURLOptions, SignedURLOptionsBuilderError> {
         if self.expires.is_zero() {
             return Err(SignedURLOptionsBuilderError::ExpiresZero);
         }
@@ -184,7 +182,7 @@ impl SignedURLOptionsBuilder {
         }
 
         if matches!(self.scheme, SignedURLScheme::V2) && !matches!(self.style, URLStyle::Path) {
-            return Err(SignedURLOptionsBuilderError::InvalidPathStyleForV2);
+            return Err(SignedURLOptionsBuilderError::V2InvalidURLStyle);
         }
 
         if self.expires > ONE_WEEK {
@@ -207,42 +205,3 @@ impl SignedURLOptionsBuilder {
         })
     }
 }
-
-#[derive(Debug)]
-pub enum SignedURLOptionsBuilderError {
-    ExpiresZero,
-    ExpiresTooLongForV4,
-    EmptyGoogleAccessId,
-    Base64DecodeError(DecodeError),
-    InvalidChecksum,
-    InvalidPathStyleForV2,
-    InvalidExpirationDuration,
-}
-
-impl Display for SignedURLOptionsBuilderError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::ExpiresZero => write!(
-                f,
-                "Invalid expiration date, expiration duration cannot be zero."
-            ),
-            Self::ExpiresTooLongForV4 => write!(
-                f,
-                "Invalid expiration date, expiration date is longer than 7 days with v4 sign url."
-            ),
-            Self::EmptyGoogleAccessId => write!(f, "Google access id cannot be empty."),
-            Self::Base64DecodeError(de) => write!(f, "Base64 decode error: {}", de),
-            Self::InvalidChecksum => write!(f, "Invalid md5 checksum provided."),
-            Self::InvalidPathStyleForV2 => write!(
-                f,
-                "Invalid path style for V2, only `PathStyle` is valid for V2 signing options."
-            ),
-            Self::InvalidExpirationDuration => write!(
-                f,
-                "Invalid expiration duration, expiration duration cannot be greater than 7 days."
-            ),
-        }
-    }
-}
-
-impl std::error::Error for SignedURLOptionsBuilderError {}

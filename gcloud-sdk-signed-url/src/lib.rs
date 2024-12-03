@@ -4,9 +4,14 @@ use gcloud_sdk::{
     google::iam::credentials::v1::iam_credentials_client::IamCredentialsClient, GoogleApi,
     GoogleAuthMiddleware,
 };
-use sign::options::SignedURLOptions;
+use options::SignedURLOptions;
 
-mod sign;
+mod buffer;
+mod error;
+mod method;
+mod options;
+mod scheme;
+mod url_style;
 
 pub async fn get_signed_url(
     bucket: &str,
