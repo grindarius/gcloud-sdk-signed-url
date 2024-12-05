@@ -13,7 +13,7 @@ use crate::{options::SignedURLOptions, url_style::URLStyle, SignedURLError};
 const X_GOOG_ENCRYPTION_KEY_HEADER: &str = "x-goog-encryption-key";
 const X_GOOG_ENCRYPTION_KEY_SHA_256_HEADER: &str = "x-goog-encryption-key-sha-256";
 
-pub fn sanitize_headers(headers: Vec<(String, String)>) -> Vec<(String, String)> {
+pub fn sanitize_headers(headers: &[(String, String)]) -> Vec<(String, String)> {
     let mut sanitized_headers: Vec<(String, String)> = Vec::new();
 
     for (h, v) in headers {
@@ -55,13 +55,13 @@ pub async fn signed_url(
     let host = URLStyle::Path.host(options.hostname().as_deref(), bucket);
 
     let expiration_unix: DateTime<Utc> =
-        (options.start_time().unwrap_or(SystemTime::now()) + options.expires()).into();
+        (options.start_time().cloned().unwrap_or(SystemTime::now()) + options.expires()).into();
 
     let mut buffer: String = format!(
         "{}\n{}\n{}\n{}\n",
         options.method(),
-        options.content_md5().unwrap_or("".to_string()),
-        options.content_type().unwrap_or("".to_string()),
+        options.content_md5().unwrap_or(""),
+        options.content_type().unwrap_or(""),
         expiration_unix.timestamp()
     );
 
@@ -77,11 +77,11 @@ pub async fn signed_url(
     let signed_bytes_response = client
         .get()
         .sign_blob(SignBlobRequest {
-            name: options.google_access_id(),
+            name: options.google_access_id().to_string(),
             delegates: vec![],
             payload: buffer.into_bytes(),
         })
-        .await.map_err(|e| e.)
+        .await?;
 
     let encoded = BASE64_STANDARD.encode(&signed_bytes_response.get_ref().signed_blob);
     signed_url
@@ -91,5 +91,5 @@ pub async fn signed_url(
         .append_pair("Signature", &encoded)
         .finish();
 
-    signed_url
+    Ok(signed_url)
 }
