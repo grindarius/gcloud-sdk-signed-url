@@ -46,48 +46,48 @@ impl SignedURLOptions {
         }
     }
 
-    pub fn start_time(&self) -> Option<SystemTime> {
-        self.start_time
+    pub fn start_time(&self) -> Option<&SystemTime> {
+        self.start_time.as_ref()
     }
 
     pub fn insecure(&self) -> bool {
         self.insecure
     }
 
-    pub fn style(&self) -> URLStyle {
-        self.style.clone()
+    pub fn style(&self) -> &URLStyle {
+        &self.style
     }
 
-    pub fn hostname(&self) -> Option<String> {
-        self.hostname.clone()
+    pub fn hostname(&self) -> Option<&str> {
+        self.hostname.as_deref()
     }
 
     pub fn scheme(&self) -> SignedURLScheme {
         self.scheme
     }
 
-    pub fn headers(&self) -> Vec<(String, String)> {
-        self.headers.clone()
+    pub fn headers(&self) -> &[(String, String)] {
+        &self.headers
     }
 
-    pub fn content_type(&self) -> Option<String> {
-        self.content_type.clone()
+    pub fn content_type(&self) -> Option<&str> {
+        self.content_type.as_deref()
     }
 
-    pub fn content_md5(&self) -> Option<String> {
-        self.content_md5.clone()
+    pub fn content_md5(&self) -> Option<&str> {
+        self.content_md5.as_deref()
     }
 
-    pub fn google_access_id(&self) -> String {
-        self.google_access_id.clone()
+    pub fn google_access_id(&self) -> &str {
+        &self.google_access_id
     }
 
     pub fn expires(&self) -> Duration {
         self.expires
     }
 
-    pub fn query_parameters(&self) -> Vec<(String, String)> {
-        self.query_parameters.clone()
+    pub fn query_parameters(&self) -> &[(String, String)] {
+        &self.query_parameters
     }
 
     pub fn method(&self) -> SignedURLMethod {
@@ -162,7 +162,7 @@ impl SignedURLOptionsBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<SignedURLOptions, SignedURLOptionsBuilderError> {
+    pub fn build(self) -> Result<SignedURLOptions, SignedURLOptionsBuilderError> {
         if self.expires.is_zero() {
             return Err(SignedURLOptionsBuilderError::ExpiresZero);
         }
@@ -190,18 +190,18 @@ impl SignedURLOptionsBuilder {
         }
 
         Ok(SignedURLOptions {
-            google_access_id: self.google_access_id.clone(),
+            google_access_id: self.google_access_id,
             start_time: self.start_time,
             method: self.method,
             expires: self.expires,
-            content_type: self.content_type.clone(),
-            headers: self.headers.clone().unwrap_or_default(),
-            query_parameters: self.query_parameters.clone().unwrap_or_default(),
-            content_md5: self.content_md5.clone(),
-            style: self.style.clone(),
+            content_type: self.content_type,
+            headers: self.headers.unwrap_or_default(),
+            query_parameters: self.query_parameters.unwrap_or_default(),
+            content_md5: self.content_md5,
+            style: self.style,
             insecure: self.insecure.unwrap_or(false),
             scheme: self.scheme,
-            hostname: self.hostname.clone(),
+            hostname: self.hostname,
         })
     }
 }
