@@ -1,6 +1,5 @@
-use std::fmt::Display;
-
 use base64::DecodeError;
+use gcloud_sdk::tonic::Status;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SignedURLOptionsBuilderError {
@@ -26,4 +25,6 @@ pub enum SignedURLOptionsBuilderError {
 pub enum SignedURLError {
     #[error("Builder error: {0}")]
     BuilderError(#[from] SignedURLOptionsBuilderError),
+    #[error("Tonic error: {0}")]
+    TonicError(#[from] Status),
 }
